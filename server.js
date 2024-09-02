@@ -28,4 +28,4 @@ app.use('/api/account',accountRoutes)
 app.use('/api/login',loginRoute)
 app.use('/message',messageRoute)
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT);
