@@ -2,22 +2,40 @@ const router = require('express').Router();
 const jwt = require('jsonwebtoken');
 const { User } = require('../../models/User');
 const bcrypt = require('bcryptjs');
-require('dotenv').config()
+require('dotenv').config();
 
 router.post('/', async (req, res) => {
-    try{
-        const user= await User.findOne({email:req.body.email});
-        if(!user) return res.status(201).json({message:"Invalid credentials",user});
-        const isPasswordValid = await bcrypt.compare(req.body.password,user.password)
-        if(!isPasswordValid) return res.status(201).json({message:"Invalid credentials",user}); 
-        const token = jwt.sign({ _id: user._id, username:user.username, email:user.email, password:"NULL" }, process.env.SECRET);
-        return res.status(201).json({message:"success Login",user,token});
+    try {
+        const { email, password } = req.body;
 
-    }
-    catch(error){
-        res.status(500).json({error: error.message});
-        res.send('user not found');
-    }
-})
+        // Check if email and password are provided
+        if (!email || !password) {
+            return res.status(400).json({ message: "Email and password are required" });
+        }
 
-module.exports = router
+        // Find user by email
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(401).json({ message: "Invalid credentials" });
+        }
+
+        // Validate password
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
+            return res.status(401).json({ message: "Invalid credentials" });
+        }
+
+        // Generate JWT
+        const token = jwt.sign(
+            { _id: user._id, username: user.username, email: user.email },
+            process.env.SECRET,
+            { expiresIn: '1h' } // Optional: set token expiration
+        );
+
+        return res.status(200).json({ message: "Successful login", user, token });
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+});
+
+module.exports = router;
